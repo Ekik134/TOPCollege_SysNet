@@ -15,7 +15,7 @@
 std::vector<uint8_t> ReadRawData(socket_t client)
 {
     size_t len;
-    recv(client, &len, static_cast<netsize_t>(sizeof(len)), 0);
+    recv(client, reinterpret_cast<char*>(&len), static_cast<netsize_t>(sizeof(len)), 0);
     std::vector<uint8_t> data(sizeof(size_t) + sizeof(int) + len, 0);
     std::copy_n(&len, 1, data.begin());
 
@@ -23,7 +23,8 @@ std::vector<uint8_t> ReadRawData(socket_t client)
     size_t totalRead = 0;
     for (; totalRead < data.size() - sizeof(len); totalRead += bytes)
     {
-        bytes = recv(client, data.data() + sizeof(len) + totalRead, static_cast<netsize_t>(data.size() - sizeof(len) - totalRead), 0);
+        bytes = recv(client, reinterpret_cast<char*>(data.data() + sizeof(len) + totalRead),
+             static_cast<netsize_t>(data.size() - sizeof(len) - totalRead), 0);
         if (bytes <= 0)
         {
             throw std::exception{};

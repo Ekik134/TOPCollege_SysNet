@@ -96,7 +96,8 @@ int main()
 
         // Отправляем данные на сервер с помощью send
         // В Unix для тех же целей можно использовать write()
-        send(sock, serialized.data(), static_cast<netsize_t>(serialized.size()), 0);
+        send(sock, reinterpret_cast<const char*>(serialized.data()),
+     static_cast<netsize_t>(serialized.size()), 0);
     }
 
     // Закрываем сокет, вместе с ним соединение

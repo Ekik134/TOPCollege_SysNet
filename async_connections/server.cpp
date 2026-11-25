@@ -14,26 +14,34 @@
 #include <mutex>
 #include <atomic>
 #include <list>
+#include <string>
 
 std::atomic_bool run = true;
 std::mutex mutex;
 
 // Функция, принимающая соединения
-void HandleConnection(int client, std::reference_wrapper<std::string> wrapper)
+void HandleConnection(socket_t client, std::string ip)
 {
     char data[64];
+
+    ssize_t bytes = recv(client, data, static_cast<netsize_t>(sizeof(data)), 0);
+    if (bytes <= 0) { return; }
+    std::string nickname(data, bytes);
+    {   std::lock_guard lock(mutex);
+        std::cout << "Connected " << ip << " as " << nickname << std::endl; }
+
     while (true)
     {
         // Принимаем данные с клиента с помощью recv
         // В Unix для тех же целей можно использовать read()
-        ssize_t bytes = recv(client, data, static_cast<netsize_t>(sizeof(data)), 0);
+        bytes = recv(client, data, static_cast<netsize_t>(sizeof(data)), 0);
         if (bytes <= 0)
         {
             break;
         }
 
         std::lock_guard lock(mutex);
-        std::cout << "From " << wrapper.get() << ": ";
+        std::cout << "From " << nickname << ": ";
         std::cout.write(data, bytes);
         std::cout << std::endl;
     }
@@ -101,7 +109,7 @@ int main()
     while(run)
     {
         sockaddr_in clientAddress;
-        socklen_t socklen; 
+        socklen_t socklen = sizeof(sockaddr_in);
 
         // Принимаем подключение, если оно есть, а если его нет - просто блокируемся и ждем
         // Два следующих аргумента нужны для сохранения адреса подключившегося клиента, мы их не используем
@@ -121,7 +129,7 @@ int main()
             std::cout << "Connected " << ip << std::endl;
         }
 
-        threadPool.emplace_back(HandleConnection, client, std::ref(ip));
+        threadPool.emplace_back(HandleConnection, client, ip);
     }
 
     for (auto& thr : threadPool)

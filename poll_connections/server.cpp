@@ -76,13 +76,13 @@ int main()
     char data[64];
     while (true)
     {
-        int n = poll(pollStruct.data(), pollStruct.size(), -1);
+        int n = poll(pollStruct.data(), static_cast<int>(pollStruct.size()), -1);
         if (n > 0)
         {
             if (pollStruct[0].revents & POLLIN)
             {
                 sockaddr_in clientAddress{ .sin_family = AF_INET, .sin_port = 0, .sin_addr = {}, .sin_zero = {}};
-                socklen_t socklen = 0;
+                socklen_t socklen = sizeof(sockaddr_in);
 
                 // Принимаем подключение, если оно есть, а если его нет - просто блокируемся и ждем
                 // Два следующих аргумента нужны для сохранения адреса подключившегося клиента, мы их не используем
@@ -107,7 +107,7 @@ int main()
                         ssize_t bytes = recv(pollStruct[i].fd, data, static_cast<netsize_t>(sizeof(data)), 0);
                         if (bytes <= 0)
                         {
-                            pollStruct[i].fd = -1;
+                            pollStruct[i].fd = INVALID_SOCKET;
                             continue;
                         }
 
@@ -116,7 +116,7 @@ int main()
                     }
                     else if (pollStruct[i].revents & POLLNVAL)
                     {
-                        pollStruct[i].fd = -1;
+                        pollStruct[i].fd = INVALID_SOCKET;
                     }
                 }
             }

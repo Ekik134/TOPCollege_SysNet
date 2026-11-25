@@ -72,6 +72,12 @@ int main()
         return 1;
     }
 
+    std::cout << "Connected, enter your nickname:" << std::endl;
+
+    std::string nickname;
+    std::getline(std::cin, nickname);
+    send(sock, nickname.c_str(), static_cast<netsize_t>(nickname.size()), 0);
+
     std::cout << "Connected, start writing messages!" << std::endl;
 
     while (true)
