@@ -30,3 +30,4 @@ endif()
 # Подпроекты
 add_subdirectory(client_server)
 add_subdirectory(serialization)
+add_subdirectory(async_connections)
