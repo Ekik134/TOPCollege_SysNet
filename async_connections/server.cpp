@@ -15,9 +15,11 @@
 #include <atomic>
 #include <list>
 #include <string>
+#include <vector>
 
 std::atomic_bool run = true;
 std::mutex mutex;
+std::vector<socket_t> clients;
 
 // Функция, принимающая соединения
 void HandleConnection(socket_t client, std::string ip)
@@ -28,7 +30,8 @@ void HandleConnection(socket_t client, std::string ip)
     if (bytes <= 0) { return; }
     std::string nickname(data, bytes);
     {   std::lock_guard lock(mutex);
-        std::cout << "Connected " << ip << " as " << nickname << std::endl; }
+        std::cout << "Connected " << ip << " as " << nickname << std::endl; 
+        clients.push_back(client);}
 
     while (true)
     {
@@ -44,6 +47,21 @@ void HandleConnection(socket_t client, std::string ip)
         std::cout << "From " << nickname << ": ";
         std::cout.write(data, bytes);
         std::cout << std::endl;
+
+       std::string broadcast_msg = nickname + ": ";
+        broadcast_msg.append(data, bytes); // Безопасно добавляем ровно bytes символов
+
+        for (socket_t other : clients)
+        { if (other != client)
+            { send(other, broadcast_msg.c_str(), static_cast<netsize_t>(broadcast_msg.size()), 0);}
+        }
+    }
+
+    {
+        std::lock_guard lock(mutex);
+        auto it = std::find(clients.begin(), clients.end(), client);
+        if (it != clients.end()) { clients.erase(it); }
+        close(client);
     }
 }
 

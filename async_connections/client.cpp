@@ -9,6 +9,7 @@
 #include <string>
 #include <cstring>
 #include <exception>
+#include <thread>
 
 int main()
 {
@@ -79,6 +80,26 @@ int main()
     send(sock, nickname.c_str(), static_cast<netsize_t>(nickname.size()), 0);
 
     std::cout << "Connected, start writing messages!" << std::endl;
+    std::cout << "> ";
+
+    std::thread reader([sock]() {
+        char data[64];
+        while (true)
+        {
+            ssize_t bytes = recv(sock, data, static_cast<netsize_t>(sizeof(data)), 0);
+            if (bytes <= 0)
+            {
+                std::cout << "\n[Disconnected from server]" << std::endl;
+                break;
+            }
+            
+            std::cout << "\r"; 
+            std::cout.write(data, bytes);
+            std::cout << std::endl;
+            std::cout << "> ";
+            std::cout.flush();
+        }
+    });
 
     while (true)
     {
@@ -93,6 +114,8 @@ int main()
         // В Unix для тех же целей можно использовать write()
         send(sock, line.c_str(), static_cast<netsize_t>(line.size()), 0);
     }
+
+    reader.detach();
 
     // Закрываем сокет, вместе с ним соединение
     close(sock);
